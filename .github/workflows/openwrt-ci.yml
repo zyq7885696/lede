@@ -7,7 +7,7 @@
 # <https://github.com/KFERMercer/OpenWrt-CI>
 #
 
-name: OpenWrt-CI
+name: zyq-CI
 
 on:
   push:
@@ -103,9 +103,9 @@ jobs:
           # CONFIG_TARGET_x86_64_Generic=y
           # EOF
           # 固件压缩:
-          # cat >> .config <<EOF
-          # CONFIG_TARGET_IMAGES_GZIP=y
-          # EOF
+          cat >> .config <<EOF
+          CONFIG_TARGET_IMAGES_GZIP=y
+          EOF
           # 编译UEFI固件:
           # cat >> .config <<EOF
           # CONFIG_EFI_IMAGES=y
@@ -164,7 +164,6 @@ jobs:
           CONFIG_PACKAGE_luci-app-smartdns=y
           CONFIG_PACKAGE_netdata=y
           CONFIG_PACKAGE_luci-app-netdata=y
-          
           EOF
           # LuCI主题:
           cat >> .config <<EOF
