@@ -57,7 +57,9 @@ jobs:
           cd openwrt-packages
           git clone https://github.com/rosywrt/luci-theme-rosy
           git clone https://github.com/AdguardTeam/AdGuardHome.git
-          git clone https://github.com/sunlanhao/luci-app-adguardhome.git
+          git clone https://github.com/pymumu/smartdns.git
+          git clone https://github.com/pymumu/luci-app-smartdns.git
+          git clone https://github.com/netdata/netdata.git
       - name: Update feeds
         run: |
           ./scripts/feeds update -a
@@ -153,10 +155,16 @@ jobs:
           # CONFIG_PACKAGE_luci-app-webadmin=y
           # CONFIG_PACKAGE_luci-app-wireguard=y
           # CONFIG_PACKAGE_luci-app-wrtbwmon=y
-          CONFIG_PACKAGE_luci-app-adguardhome=y
+          CONFIG_PACKAGE_luci-i18n-netdata-zh-cn
+          CONFIG_PACKAGE_luci-i18n-mwan3-zh-cn=y
+          CONFIG_PACKAGE_luci-i18n-mwan3helper-zh-cn=y
           CONFIG_PACKAGE_AdGuardHome=y
-          CONFIG_PACKAGE_luci-app-mwan=y
           CONFIG_PACKAGE_luci-app-mwan3=y
+          CONFIG_PACKAGE_smartdns=y
+          CONFIG_PACKAGE_luci-app-smartdns=y
+          CONFIG_PACKAGE_netdata=y
+          CONFIG_PACKAGE_luci-app-netdata=y
+          
           EOF
           # LuCI主题:
           cat >> .config <<EOF
