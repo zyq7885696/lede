@@ -61,7 +61,7 @@ jobs:
 
       - name: Generate configuration file
         run: |
-          # 基础配置
+          # 基础配置 - 使用 mbedtls 代替 openssl
           cat > .config << 'EOF'
           CONFIG_TARGET_x86=y
           CONFIG_TARGET_x86_64=y
@@ -76,12 +76,19 @@ jobs:
           CONFIG_KERNEL_BUILD_USER="builder"
           CONFIG_KERNEL_BUILD_DOMAIN="buildhost"
           
-          # 基本软件包
-          CONFIG_PACKAGE_curl=y
+          # 基本软件包 - 使用 mbedtls
+          CONFIG_PACKAGE_curl=m
           CONFIG_PACKAGE_openssh-sftp-server=y
           CONFIG_PACKAGE_luci=y
-          CONFIG_PACKAGE_luci-ssl=y
+          CONFIG_PACKAGE_luci-ssl=m
           CONFIG_PACKAGE_luci-compat=y
+          CONFIG_PACKAGE_libustream-mbedtls=y
+          
+          # 禁用 OpenSSL 相关包
+          # CONFIG_PACKAGE_libustream-openssl is not set
+          # CONFIG_PACKAGE_libopenssl is not set
+          # CONFIG_PACKAGE_libopenssl-conf is not set
+          # CONFIG_PACKAGE_openssl-util is not set
           
           # LuCI 主题
           CONFIG_PACKAGE_luci-theme-bootstrap=y
@@ -105,23 +112,28 @@ jobs:
           CONFIG_PACKAGE_luci-app-ttyd=y
           CONFIG_PACKAGE_luci-app-argon-config=y
           
-          # Docker 支持（可选，如需启用取消注释）
-          # CONFIG_PACKAGE_luci-i18n-dockerman-zh-cn=y
-          # CONFIG_PACKAGE_docker=y
-          # CONFIG_PACKAGE_dockerd=y
-          
           # 网络支持
           CONFIG_PACKAGE_kmod-tcp-bbr=y
           CONFIG_PACKAGE_kmod-tcp-bbr2=y
           CONFIG_DEFAULT_TCP_CONG="bbr"
           EOF
           
-          # 如果需要包含 Docker，取消下面的注释
-          # echo 'CONFIG_PACKAGE_luci-i18n-dockerman-zh-cn=y' >> .config
-          # echo 'CONFIG_PACKAGE_docker=y' >> .config
-          # echo 'CONFIG_PACKAGE_dockerd=y' >> .config
+          # 确保移除可能存在的 openssl 配置
+          sed -i '/CONFIG_PACKAGE_libustream-openssl/d' .config
+          sed -i '/CONFIG_PACKAGE_libopenssl/d' .config
+          sed -i '/CONFIG_PACKAGE_openssl-util/d' .config
+          
+          # 确保 mbedtls 已启用
+          if ! grep -q "CONFIG_PACKAGE_libustream-mbedtls=y" .config; then
+            echo "CONFIG_PACKAGE_libustream-mbedtls=y" >> .config
+          fi
           
           make defconfig
+          
+          # 验证配置
+          echo "=== 验证包配置 ==="
+          grep "libustream" .config
+          grep "libopenssl" .config || echo "✓ OpenSSL 已禁用"
 
       - name: Download Kucat theme packages
         run: |
@@ -186,6 +198,12 @@ jobs:
           make download -j16
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
+
+      - name: Clean build cache (resolve conflicts)
+        run: |
+          # 清理可能存在的冲突文件
+          find build_dir -name "*libustream*" -exec rm -f {} \; 2>/dev/null || true
+          rm -f build_dir/target-x86_64_musl/root-x86/lib/libustream-ssl.so 2>/dev/null || true
 
       - name: Compile firmware
         run: |
